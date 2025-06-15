@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: db2-pvc
+  namespace: auth-demo
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db2
+  namespace: auth-demo
+spec:
+  selector:
+    app: db2
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db2
+  namespace: auth-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db2
+  template:
+    metadata:
+      labels:
+        app: db2
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: curso_springboot
+            - name: POSTGRES_USER
+              value: devdb
+            - name: POSTGRES_PASSWORD
+              value: a1b2c3d4
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: db2-storage
+      volumes:
+        - name: db2-storage
+          persistentVolumeClaim:
+            claimName: db2-pvc
